@@ -13,7 +13,7 @@ void print_data(U8 *data, U8 len)
 {
     for (U8 i = 0; i < len; i++)
     {
-        printf("0x%.2x ", data[i]);
+        printf("0x%.2X ", data[i]);
     }
     printf("\n");
 }

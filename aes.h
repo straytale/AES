@@ -16,6 +16,6 @@
  * @param key
  * @param key_len
  * @param operation: ENCRYPT or DECRYPT
- * @return allocate buffer with data
+ * @return allocated buffer with entrypted/decrypted data
  */
 U8 *aes128(U8 *data, U8 data_len, U8 *key, U8 key_len, U8 operation);

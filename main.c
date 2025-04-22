@@ -4,14 +4,17 @@
 
 int main(void)
 {
-    char *input = "XXXSSSXXX";
-    char *temp;
+    char *input = "NULL";
+    int input_len = strlen(input);
     char *output;
-    char *key = "1234567890123456";
+    int output_len;
+    char *temp;
+    char *key = "1234567890156";
 
-    temp = (char *)aes128(input, strlen(input), key, 16, ENCRYPT);
+    temp = (char *)aes128(input, 16, key, 16, ENCRYPT);
     output = aes128(temp, 16, key, 16, DECRYPT);
-    if (strncmp(input, output, BASE128) == 0)
+    output_len = strlen(output);
+    if (strncmp(input, output, BASE128) == 0 && input_len == output_len)
     {
         printf("Compare PASS\n");
     }
