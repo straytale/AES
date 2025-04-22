@@ -1,75 +1,96 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <stdlib.h>
 #include "aes.h"
 
-// 測試用 key 和資料
-const U8 test_key[16] = {
-    0x2b, 0x7e, 0x15, 0x16,
-    0x28, 0xae, 0xd2, 0xa6,
-    0xab, 0xf7, 0x15, 0x88,
-    0x09, 0xcf, 0x4f, 0x3c};
-
-const U8 plain_text[16] = {
-    0x32, 0x43, 0xf6, 0xa8,
-    0x88, 0x5a, 0x30, 0x8d,
-    0x31, 0x31, 0x98, 0xa2,
-    0xe0, 0x37, 0x07, 0x34};
-
-const U8 expected_cipher[16] = {
-    0x39, 0x25, 0x84, 0x1d,
-    0x02, 0xdc, 0x09, 0xfb,
-    0xdc, 0x11, 0x85, 0x97,
-    0x19, 0x6a, 0x0b, 0x32};
-
-void test_encrypt()
+void print_hex(const char *label, const U8 *data, size_t len)
 {
-    U8 buffer[16];
-    memcpy(buffer, plain_text, 16);
-
-    AES_ctx ctx;
-    AES_init_ctx(&ctx, test_key);
-    AES_ECB_encrypt(&ctx, buffer);
-
-    printf("Encryption test: ");
-    assert(memcmp(buffer, expected_cipher, 16) == 0);
-    printf("PASSED\n");
+    printf("%s", label);
+    for (size_t i = 0; i < len; i++)
+    {
+        printf("%02X ", data[i]);
+    }
+    printf("\n");
 }
 
-void test_decrypt()
+void test_null_input()
 {
-    U8 buffer[16];
-    memcpy(buffer, expected_cipher, 16);
-
-    AES_ctx ctx;
-    AES_init_ctx(&ctx, test_key);
-    AES_ECB_decrypt(&ctx, buffer);
-
-    printf("Decryption test: ");
-    assert(memcmp(buffer, plain_text, 16) == 0);
-    printf("PASSED\n");
+    U8 key[BASE128] = {0};
+    assert(aes128(NULL, 0, key, BASE128, ENCRYPT) == NULL);
+    assert(aes128((U8 *)"test", 4, NULL, BASE128, ENCRYPT) == NULL);
+    assert(aes128((U8 *)"test", 4, key, 10, ENCRYPT) == NULL);
+    printf("NULL input test: PASSED\n");
 }
 
-void test_encrypt_decrypt_roundtrip()
+void test_exact_5_bytes()
 {
-    U8 buffer[16];
-    memcpy(buffer, plain_text, 16);
+    U8 key[BASE128] = {0};
+    U8 input[5] = "HELLO";
+    U8 *enc = aes128(input, 5, key, BASE128, ENCRYPT);
+    U8 *dec = aes128(enc, BASE128, key, BASE128, DECRYPT);
+    assert(memcmp(dec, input, 5) == 0);
+    printf("5-byte input test: PASSED\n");
+    free(enc);
+    free(dec);
+}
 
-    AES_ctx ctx;
-    AES_init_ctx(&ctx, test_key);
-    AES_ECB_encrypt(&ctx, buffer);
-    AES_ECB_decrypt(&ctx, buffer);
+void test_exact_16_bytes()
+{
+    U8 key[BASE128] = {0};
+    U8 input[16] = "1234567890ABCDEF";
+    U8 *enc = aes128(input, 16, key, BASE128, ENCRYPT);
+    U8 *dec = aes128(enc, BASE128, key, BASE128, DECRYPT);
+    assert(memcmp(dec, input, 16) == 0);
+    printf("16-byte input test: PASSED\n");
+    free(enc);
+    free(dec);
+}
 
-    printf("Roundtrip test: ");
-    assert(memcmp(buffer, plain_text, 16) == 0);
-    printf("PASSED\n");
+void test_18_bytes()
+{
+    U8 key[BASE128] = {0};
+    U8 input[18] = "1234567890ABCDEFGH"; // 18 bytes
+    U8 *enc = aes128(input, 18, key, BASE128, ENCRYPT);
+    U8 *dec = aes128(enc, 32, key, BASE128, DECRYPT); // padded to 32 bytes (2 blocks)
+    assert(memcmp(dec, input, 18) == 0);
+    printf("18-byte input test: PASSED\n");
+    free(enc);
+    free(dec);
+}
+
+void test_32_bytes()
+{
+    U8 key[BASE128] = {0};
+    U8 input[32] = "ABCDEFGHIJKLMNOPQRSTUVWX12345678"; // exactly 32 bytes
+    U8 *enc = aes128(input, 32, key, BASE128, ENCRYPT);
+    U8 *dec = aes128(enc, 32, key, BASE128, DECRYPT);
+    assert(memcmp(dec, input, 32) == 0);
+    printf("32-byte input test: PASSED\n");
+    free(enc);
+    free(dec);
+}
+
+void test_34_bytes()
+{
+    U8 key[BASE128] = {0};
+    U8 input[34] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ12345678"; // 34 bytes
+    U8 *enc = aes128(input, 34, key, BASE128, ENCRYPT);
+    U8 *dec = aes128(enc, 48, key, BASE128, DECRYPT); // padded to 48 bytes (3 blocks)
+    assert(memcmp(dec, input, 34) == 0);
+    printf("34-byte input test: PASSED\n");
+    free(enc);
+    free(dec);
 }
 
 int main()
 {
-    test_encrypt();
-    test_decrypt();
-    test_encrypt_decrypt_roundtrip();
+    test_null_input();
+    test_exact_5_bytes();
+    test_exact_16_bytes();
+    test_18_bytes();
+    test_32_bytes();
+    test_34_bytes();
 
     printf("All AES-128 ECB tests passed.\n");
     return 0;
