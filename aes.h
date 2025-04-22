@@ -1,21 +1,22 @@
-#define DEBUGING (1)
+#ifndef AES_H
+#define AES_H
 
-#define ENCRYPT (0)
-#define DECRYPT (1)
+#include <stdint.h>
+#include <string.h>
 
-#define BASE128 (16)
+#define AES_BLOCKLEN 16 // Block length in bytes - AES is 128b block only
 
-#define U8 unsigned char
-#define U16 unsigned short
-#define U32 unsigned int
+typedef uint8_t U8;
+typedef uint16_t U16;
+typedef uint32_t U32;
 
-/**
- * @brief Encrypt/Decrypt the data by the key (ECB)¡Aplease remember to free the return
- * @param data
- * @param data_len
- * @param key
- * @param key_len
- * @param operation: ENCRYPT or DECRYPT
- * @return allocated buffer with entrypted/decrypted data
- */
-U8 *aes128(U8 *data, U8 data_len, U8 *key, U8 key_len, U8 operation);
+typedef struct
+{
+    U8 RoundKey[176]; // 11 rounds * 16 bytes each
+} AES_ctx;
+
+void AES_init_ctx(AES_ctx *ctx, const U8 *key);
+void AES_ECB_encrypt(const AES_ctx *ctx, U8 *buf);
+void AES_ECB_decrypt(const AES_ctx *ctx, U8 *buf);
+
+#endif
