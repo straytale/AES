@@ -3,19 +3,19 @@
 #define ENCRYPT (0)
 #define DECRYPT (1)
 
-#define BASE256 (8)
 #define BASE128 (16)
-#define BASE512 (32)
 
 #define U8 unsigned char
 #define U16 unsigned short
 #define U32 unsigned int
 
 /**
- * @brief Encrypt/Decrypt the data by the key (ECB)
+ * @brief Encrypt/Decrypt the data by the key (ECB)¡Aplease remember to free the return
  * @param data
+ * @param data_len
  * @param key
+ * @param key_len
  * @param operation: ENCRYPT or DECRYPT
- *
+ * @return allocate buffer with data
  */
-char *aes128(char *data, char *key, unsigned short operation);
+U8 *aes128(U8 *data, U8 data_len, U8 *key, U8 key_len, U8 operation);

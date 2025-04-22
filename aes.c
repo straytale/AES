@@ -13,7 +13,7 @@ void print_data(U8 *data, U8 len)
 {
     for (U8 i = 0; i < len; i++)
     {
-        printf("0x%x ", data[i]);
+        printf("0x%.2x ", data[i]);
     }
     printf("\n");
 }
@@ -21,21 +21,22 @@ void print_data(U8 *data, U8 len)
 void encrypt(U8 *data[], U8 *key)
 {
 #if DEBUGING
-    printf("Key: ");
-    print_data(key, strlen(key));
+    printf("[      key     ] ");
+    print_data(key, BASE128);
 #endif
 }
 
 void decrypt(U8 *data[], U8 *key)
 {
 #if DEBUGING
-    printf("Key: ");
-    print_data(key, strlen(key));
+    printf("[      key     ] ");
+    print_data(key, BASE128);
 #endif
 }
 
-void PKCS7(U8 *data[], U8 len)
+void PKCS7(U8 *data[])
 {
+    U8 len = strlen(*data);
     U8 exp = BASE128 - len;
     for (U8 i = len; i < BASE128; i++)
     {
@@ -43,55 +44,67 @@ void PKCS7(U8 *data[], U8 len)
     }
 }
 
-char *aes128(char *data, char *key, unsigned short operation)
+void dePKCS7(U8 *data[])
 {
-    U8 *buffer = (U8 *)malloc(sizeof(U8) * BASE128);
-    memset(buffer, 0, BASE128);
-
-    U8 data_len = strlen(data);
-    U8 key_len = strlen(key);
-    memcpy(buffer, data, data_len);
-
-    // checking
-    if (data_len == 0)
+    U8 exp = (*data)[BASE128 - 1];
+    for (int i = 0; i < exp; i++)
     {
-        return NULL;
+        if ((*data)[BASE128 - i - 1] == exp)
+        {
+            continue;
+        }
+        return;
     }
-    else if (data_len > BASE128)
+    for (int i = 0; i < exp; i++)
     {
-        assert("The Data size is exceeds 128 bits");
+        (*data)[BASE128 - i - 1] = 0;
     }
-    else if (key_len != BASE128)
-    {
-        assert("The Key size must be 128 bits");
-    }
+}
 
-#if DEBUGING
-    printf("Input data: ");
-    print_data(buffer, BASE128);
-#endif
-
-    if (data_len < BASE128)
+U8 *aes128(U8 *data, U8 data_len, U8 *key, U8 key_len, U8 operation)
+{
+    if (data == NULL || key == NULL || data_len > BASE128 || key_len != BASE128)
     {
-        PKCS7(&buffer, data_len);
+        assert("Parameter is invalid");
     }
 
-#if DEBUGING
-    printf("After expand: ");
-    print_data(buffer, BASE128);
-#endif
+    U8 *_data = (U8 *)malloc(BASE128);
+    U8 *_key = (U8 *)malloc(BASE128);
+
+    memset(_data, 0, BASE128);
+    memset(_key, 0, BASE128);
+    memcpy(_data, data, data_len);
+    memcpy(_key, key, key_len);
 
     switch (operation)
     {
     case ENCRYPT:
-        encrypt(&buffer, (U8 *)key);
+#if DEBUGING
+        printf("[Before encrypt] ");
+        print_data(_data, BASE128);
+#endif
+        PKCS7(&_data);
+        encrypt(&_data, (U8 *)key);
+#if DEBUGING
+        printf("[After encrypt ] ");
+        print_data(_data, BASE128);
+#endif
         break;
     case DECRYPT:
-        decrypt(&buffer, (U8 *)key);
+#if DEBUGING
+        printf("[Before decrypt] ");
+        print_data(_data, BASE128);
+#endif
+        decrypt(&_data, (U8 *)key);
+        dePKCS7(&_data);
+#if DEBUGING
+        printf("[After decrypt ] ");
+        print_data(_data, BASE128);
+#endif
         break;
     default:
         break;
     }
-
-    return buffer;
+    free(_key);
+    return _data;
 }
