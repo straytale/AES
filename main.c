@@ -2,6 +2,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <time.h>
 #include "aes.h"
 
 void print_hex(const char *label, const U8 *data, size_t len)
@@ -83,6 +84,28 @@ void test_34_bytes()
     free(dec);
 }
 
+void test_random_stress()
+{
+    U8 key[BASE128] = "1234567890ABCDEF";
+    for (int i = 0; i < 1000; i++)
+    {
+        srand(time(NULL));
+        size_t len = i;
+        U8 *input = malloc(len);
+        for (size_t j = 0; j < len; j++)
+            input[j] = rand() % 256;
+
+        U8 *enc = aes128(input, len, key, BASE128, ENCRYPT);
+        U8 *dec = aes128(enc, ((len + 15) / 16) * 16, key, BASE128, DECRYPT);
+        assert(memcmp(dec, input, len) == 0);
+
+        free(input);
+        free(enc);
+        free(dec);
+    }
+    printf("Random stress test: PASSED\n");
+}
+
 int main()
 {
     test_null_input();
@@ -91,6 +114,7 @@ int main()
     test_18_bytes();
     test_32_bytes();
     test_34_bytes();
+    test_random_stress();
 
     printf("All AES-128 ECB tests passed.\n");
     return 0;
